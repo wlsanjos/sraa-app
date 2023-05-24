@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  guild_id         String    @unique
+  googleApiPlan_id String?
+  createdAt        DateTime? @default(now())
+  updatedAt        DateTime? @updatedAt
+  deleted          Boolean   @default(false)
+  login            Login[]
+  teams            Team[]
+
+  @@map("guilds")
+}
+
+model Roles {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deleted   Boolean   @default(false)
+  login     User[]
+
+  @@map("roles")
+}
+
+model Login {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  username String @unique
+  password String
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deleted   Boolean   @default(false)
+  is_active Boolean   @default(false)
+
+  user     User?   @relation(fields: [user_id], references: [id])
+  user_id  String? @db.ObjectId
+  guild    Guild?  @relation(fields: [guild_id], references: [id])
+  guild_id String? @db.ObjectId
+
+  @@map("logins")
+}
+
+model User {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  surname    String?   @unique
+  name       String
+  passport   String    @unique
+  member_id  String?   @unique
+  avatar_url String?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  deleted    Boolean   @default(false)
+
+  role    Roles?  @relation(fields: [role_id], references: [id])
+  role_id String? @db.ObjectId
+
+  trainers Trainers[]
+  students Students[]
+
+  login    Login[]
+  licences Licences[]
+
+  @@map("users")
+}
+
+model Team {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  initial_date String?
+  end_date     String?
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @updatedAt
+  deleted      Boolean   @default(false)
+
+  schedules_id String[]    @db.ObjectId
+  schedules    Schedules[] @relation(fields: [schedules_id], references: [id])
+
+  students_id String[]   @db.ObjectId
+  students    Students[] @relation(fields: [students_id], references: [id])
+
+  trainers_id String[]   @db.ObjectId
+  trainers    Trainers[] @relation(fields: [trainers_id], references: [id])
+
+  status    TeamStatus? @relation(fields: [status_id], references: [id])
+  status_id String?     @db.ObjectId
+
+  guild    Guild?  @relation(fields: [guild_id], references: [id])
+  guild_id String? @db.ObjectId
+
+  @@map("teams")
+}
+
+model Schedules {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  dayOfWeek String
+  time      String
+  team_id   String[] @db.ObjectId
+  team      Team[]   @relation(fields: [team_id], references: [id])
+
+  @@map("schedules")
+}
+
+model Trainers {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  user       User   @relation(fields: [user_id], references: [id])
+  user_id    String @db.ObjectId
+  answerable String @default("Professor(a)")
+
+  team_id String[] @db.ObjectId
+  team    Team[]   @relation(fields: [team_id], references: [id])
+
+  @@map("trainers")
+}
+
+model Students {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  user        User      @relation(fields: [user_id], references: [id])
+  user_id     String    @db.ObjectId
+  experience  String?   @default("iniciante")
+  attendance  String[]
+  observation String
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+  deleted     Boolean   @default(false)
+
+  team_id String[] @db.ObjectId
+  team    Team[]   @relation(fields: [team_id], references: [id])
+
+  @@map("students")
+}
+
+model TeamStatus {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+  deleted     Boolean   @default(false)
+  stauts      Team[]
+
+  @@map("teamStatus")
+}
+
+model Licences {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  issuance_date   String
+  expiration_date String
+  url             String
+
+  user    User   @relation(fields: [user_id], references: [id])
+  user_id String @db.ObjectId
+
+  status LicencesStatus @default(ATIVO)
+
+  @@map("licences")
+}
+
+enum LicencesStatus {
+  ATIVO
+  SUSPENSO
+}
